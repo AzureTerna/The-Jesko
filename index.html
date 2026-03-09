@@ -2,48 +2,34 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>JESKO | NEOBANK</title>
 </head>
-<body class="bg-black text-white font-mono flex items-center justify-center min-h-screen p-4">
-    <div class="p-8 border border-blue-900 rounded-3xl bg-zinc-950 shadow-2xl w-full max-w-sm text-center relative overflow-hidden">
-        <h1 class="text-blue-500 font-black tracking-[0.2em] mb-4 italic text-xl">JESKO VAULT</h1>
-        
-        <div class="py-10 border-y border-zinc-800/50 my-6 bg-black/40 rounded-xl">
-            <p class="text-[10px] text-zinc-500 mb-2 tracking-widest uppercase">Available Balance</p>
-            <h2 id="balance" class="text-4xl font-black text-white tracking-tight">Rp ---</h2>
+<body class="bg-black text-white font-mono flex items-center justify-center min-h-screen">
+    <div class="p-10 border border-blue-600 rounded-3xl bg-zinc-950 shadow-[0_0_50px_-12px_rgba(37,99,235,0.5)] w-80 text-center">
+        <h1 class="text-blue-500 font-black tracking-[0.3em] mb-6 italic text-xl">JESKO VAULT</h1>
+        <div class="py-8 border-y border-zinc-900 my-4 bg-black/50">
+            <p class="text-[9px] text-zinc-600 mb-1 tracking-widest uppercase">Vault Balance</p>
+            <h2 id="balance" class="text-4xl font-bold tracking-tighter">Rp ---</h2>
         </div>
-
         <div class="flex items-center justify-center gap-2">
-            <div id="status-dot" class="w-2 h-2 bg-red-600 rounded-full"></div>
-            <p id="status-text" class="text-[10px] text-zinc-500 uppercase font-bold">Connecting...</p>
+            <div id="dot" class="w-2 h-2 bg-zinc-800 rounded-full"></div>
+            <p id="stat" class="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Scanning...</p>
         </div>
-
-        <div id="log" class="mt-4 text-[8px] text-zinc-700 uppercase tracking-tighter truncate">Initializing System...</div>
     </div>
-
     <script>
-        const API_KEY = '6767Sigma'; 
-        
         async function update() {
             try {
-                const r = await fetch(`/api?key=${API_KEY}`);
+                const r = await fetch('/api?key=6767Sigma');
                 const d = await r.json();
-                
                 if (d.balance !== undefined) {
                     document.getElementById('balance').innerText = 'Rp ' + d.balance.toLocaleString('id-ID');
-                    document.getElementById('status-dot').className = "w-2 h-2 bg-green-500 shadow-[0_0_8px_#22c55e]";
-                    document.getElementById('status-text').innerText = "Synced";
-                    document.getElementById('log').innerText = "Last Sync: " + new Date().toLocaleTimeString();
-                } else {
-                    throw new Error(d.error || "Unknown Error");
+                    document.getElementById('dot').className = "w-2 h-2 bg-blue-500 shadow-[0_0_10px_#2563eb]";
+                    document.getElementById('stat').innerText = "Online";
                 }
             } catch(e) {
-                document.getElementById('balance').innerText = "Error";
-                document.getElementById('status-dot').className = "w-2 h-2 bg-red-600 animate-pulse";
-                document.getElementById('status-text').innerText = "Error 500";
-                document.getElementById('log').innerText = "Log: " + e.message;
+                document.getElementById('dot').className = "w-2 h-2 bg-red-600 animate-pulse";
+                document.getElementById('stat').innerText = "Error 500";
             }
         }
         setInterval(update, 3000);
