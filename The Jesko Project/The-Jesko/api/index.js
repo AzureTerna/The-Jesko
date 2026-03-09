@@ -1,35 +1,51 @@
-import { sql } from '@vercel/postgres';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Pakai service role biar bisa bypass RLS
+);
 
 export default async function handler(req, res) {
   const { action, amount, key, user = 'azreal' } = req.query;
 
-  // Security Gate
   if (key !== 'SIGMA6767') return res.status(401).json({ error: 'UNAUTHORIZED' });
 
   try {
-    // 1. GET BALANCE (Default)
+    // --- MODE CEK SALDO ---
     if (!action) {
-      const { rows } = await sql`SELECT balance FROM accounts WHERE user_name = ${user};`;
-      if (rows.length === 0) return res.status(404).json({ error: 'USER_NOT_FOUND' });
-      return res.status(200).json({ balance: rows[0].balance });
+      let { data, error } = await supabase
+        .from('accounts')
+        .select('balance')
+        .eq('user_name', user)
+        .single();
+
+      // Kalau tabel belum ada atau user belum ada, kita buatkan otomatis
+      if (error && error.code === 'PGRST116') { 
+         // Buat user default jika tidak ditemukan
+         const { data: newUser } = await supabase
+          .from('accounts')
+          .insert([{ user_name: user, balance: 5000000 }])
+          .select()
+          .single();
+         return res.status(200).json({ balance: newUser.balance, note: "User Created" });
+      }
+      
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ balance: data.balance });
     }
 
-    // 2. TRANSACTION LOGIC
+    // --- MODE TRANSAKSI (ISI/TARIK) ---
     const val = parseInt(amount);
-    if (isNaN(val)) return res.status(400).json({ error: 'INVALID_AMOUNT' });
+    const { data: current } = await supabase.from('accounts').select('balance').eq('user_name', user).single();
+    
+    let newBalance = action === 'isi' ? current.balance + val : current.balance - val;
+    if (newBalance < 0) return res.status(400).json({ error: 'SALDO_LIMIT' });
 
-    if (action === 'isi') {
-      await sql`UPDATE accounts SET balance = balance + ${val} WHERE user_name = ${user};`;
-    } else if (action === 'tarik') {
-      const { rows } = await sql`SELECT balance FROM accounts WHERE user_name = ${user};`;
-      if (rows[0].balance < val) return res.status(400).json({ error: 'INSUFFICIENT_FUNDS' });
-      await sql`UPDATE accounts SET balance = balance - ${val} WHERE user_name = ${user};`;
-    }
+    await supabase.from('accounts').update({ balance: newBalance }).eq('user_name', user);
 
-    const result = await sql`SELECT balance FROM accounts WHERE user_name = ${user};`;
-    return res.status(200).json({ balance: result.rows[0].balance });
+    return res.status(200).json({ balance: newBalance });
 
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "Table might not exist. Create 'accounts' table in Supabase Dashboard UI." });
   }
 }
