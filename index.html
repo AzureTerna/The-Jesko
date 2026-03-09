@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>JESKO | NEOBANK</title>
+</head>
+<body class="bg-black text-white font-mono flex items-center justify-center min-h-screen">
+    <div class="p-8 border border-blue-900 rounded-2xl bg-zinc-950 shadow-2xl w-80 text-center">
+        <h1 class="text-blue-500 font-black tracking-widest mb-4 italic">JESKO VAULT</h1>
+        <div class="py-6 border-y border-zinc-800 my-4">
+            <p class="text-[10px] text-zinc-500 mb-1">CURRENT BALANCE</p>
+            <h2 id="balance" class="text-3xl font-bold">Rp 0</h2>
+        </div>
+        <p class="text-[9px] text-blue-900 animate-pulse">SYSTEM SYNCED WITH ARDUINO_ESP32</p>
+    </div>
+    <script>
+        async function update() {
+            try {
+                const r = await fetch('/api?key=SIGMA6767');
+                const d = await r.json();
+                document.getElementById('balance').innerText = 'Rp ' + d.balance.toLocaleString('id-ID');
+            } catch(e) { console.error("Sync Error"); }
+        }
+        setInterval(update, 5000);
+        update();
+    </script>
+</body>
+</html>
